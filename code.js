@@ -65,11 +65,11 @@ class Snake
         ctx.strokeStyle = "green"
         if(this.lost)
             ctx.strokeStyle = "darkgreen"
-        ctx.lineTo(this.board.x +this.x,this.board.y +this.y)
+        ctx.lineTo(this.x,this.y)
         const yello_tail = false
         for(var i = 1; i < this.tail_array.length; i++)
         {
-            ctx.lineTo(this.board.x + this.tail_array[i][0]*20+2, this.board.y + this.tail_array[i][1]*20+2)
+            ctx.lineTo(this.tail_array[i][0]*20+2, this.tail_array[i][1]*20+2)
             if(i + 1 == this.tail_array.length)
             {
                 if(yello_tail)
@@ -77,7 +77,7 @@ class Snake
                     ctx.stroke();
                     ctx.beginPath()
                     ctx.strokeStyle = "yellow"
-                    ctx.lineTo(this.board.x + this.tail_array[i][0]*20+2, this.board.y + this.tail_array[i][1]*20+2)
+                    ctx.lineTo(this.tail_array[i][0]*20+2, this.tail_array[i][1]*20+2)
                 }
 
                 var x_dif = Math.abs(floor((this.x - 2 + 10 + 10*Math.cos(convert(this.direction)))/20)*20 - (this.x - 2))
@@ -92,8 +92,8 @@ class Snake
 
                 var yeah = x_dif + y_dif
 
-                ctx.lineTo(this.board.x + this.tail_array[i][0]*20+2 - Math.cos(convert(this.tail_array[i][2]))*yeah-this.appling*Math.cos(convert(this.tail_array[i][2]))*10,
-                this.board.y + this.tail_array[i][1]*20+2 + Math.sin(convert(this.tail_array[i][2]))*yeah+this.appling*Math.sin(convert(this.tail_array[i][2]))*10)
+                ctx.lineTo(this.tail_array[i][0]*20+2 - Math.cos(convert(this.tail_array[i][2]))*yeah-this.appling*Math.cos(convert(this.tail_array[i][2]))*10,
+                this.tail_array[i][1]*20+2 + Math.sin(convert(this.tail_array[i][2]))*yeah+this.appling*Math.sin(convert(this.tail_array[i][2]))*10)
             }
         }
         ctx.stroke();
@@ -106,9 +106,9 @@ class Snake
 
         const head_size = 4
         ctx.lineWidth = head_size
-        ctx.lineTo(this.board.x +this.x + Math.sin(convert(this.direction))*head_size,this.board.y + this.y + Math.cos(convert(this.direction))*head_size)
-        ctx.lineTo(this.board.x +this.x - Math.sin(convert(this.direction))*head_size,this.board.y + this.y - Math.cos(convert(this.direction))*head_size)
-        ctx.lineTo(this.board.x +this.x + Math.cos(convert(this.direction))*head_size,this.board.y + this.y - Math.sin(convert(this.direction))*head_size)
+        ctx.lineTo(this.x + Math.sin(convert(this.direction))*head_size,this.y + Math.cos(convert(this.direction))*head_size)
+        ctx.lineTo(this.x - Math.sin(convert(this.direction))*head_size,this.y - Math.cos(convert(this.direction))*head_size)
+        ctx.lineTo(this.x + Math.cos(convert(this.direction))*head_size,this.y - Math.sin(convert(this.direction))*head_size)
 
         ctx.closePath()
 
@@ -205,7 +205,7 @@ class Apple
     draw()
     {
         ctx.beginPath()
-        ctx.arc(this.x+2.5+this.board.x,this.y+2.5+this.board.y,5,0,2*Math.PI)
+        ctx.arc(this.x+2.5,this.y+2.5,5,0,2*Math.PI)
         ctx.fillStyle = "red"
         ctx.fill()
         ctx.fillStyle = "white"
@@ -213,19 +213,21 @@ class Apple
 }
 
 class GameBoard{
-    constructor(x,y,w,h)
+    constructor(x,y,w,h, title)
     {
         this.x = x
         this.y = y
         this.w = w
         this.h = h
-        this.hud_height = 40
+        this.bar_width = 30
+        this.window_title = title
         this.bg_color = "white"
         this.draw = this.draw.bind(this);
         this.draw_pre = this.draw_pre.bind(this);
         this.draw_post = this.draw_post.bind(this);
-        this.draw_hud_pre = this.draw_pre.bind(this);
-        this.draw_hud_post = this.draw_post.bind(this);
+        this.draw_window_bar = this.draw_window_bar.bind(this);
+        //this.draw_hud_pre = this.draw_pre.bind(this);
+        //this.draw_hud_post = this.draw_post.bind(this);
         this.frames = setInterval(this.draw,1000/60)
         this.targetFrame = 60
         this.running = true
@@ -233,11 +235,19 @@ class GameBoard{
         this.startFrame = performance.now()
         this.fps = 0
         this.doFPS = true
+        this.beingGrabbed = false
         
         this.key_press = this.key_press.bind(this);
         self.addEventListener("keydown", this.key_press, false);
         this.key_release = this.key_release.bind(this);
         self.addEventListener("keyup", this.key_release, false);
+
+        this.mouse_works = this.mouse_works.bind(this);
+        self.addEventListener("mousedown", this.mouse_works, false);
+        this.mouse_moves = this.mouse_moves.bind(this);
+        self.addEventListener("mousemove", this.mouse_moves, false);
+        this.mouse_unworks = this.mouse_unworks.bind(this);
+        self.addEventListener("mouseup", this.mouse_unworks, false);
     }
     draw_pre()
     {
@@ -249,35 +259,59 @@ class GameBoard{
             this.startFrame = current_time
         }
         ctx.save()
+        ctx.translate(this.x,this.y+this.bar_width)
         var border = new Path2D()
-        border.rect(this.x, this.y, this.w, this.h);
+        border.rect(0, 0, this.w, this.h);
         ctx.clip(border);
         ctx.fillStyle = this.bg_color
-        ctx.fillRect(this.x,this.y,this.w,this.h)
+        ctx.fillRect(0,0,this.w,this.h)
     } 
-    draw_hud_pre()
+    /*draw_hud_pre()
     {
         ctx.save()
         var border = new Path2D()
-        border.rect(this.x, this.y, this.w, this.h+this.hud_height);
+        border.rect(0, this.y, this.w, this.h+this.hud_height);
         ctx.clip(border);
         ctx.fillStyle = this.bg_color
         ctx.fillRect(this.x,this.y+this.h,this.w,this.hud_height)
-    }
+    }*/
     draw()
     {
         this.draw_pre()
         this.draw_post()
-        this.draw_hud_pre()
-        this.draw_hud_post()
+        this.draw_window_bar()
+        //this.draw_hud_pre()
+        //this.draw_hud_post()
     }
     draw_post()
     {
         ctx.lineWidth = 4
         ctx.strokeStyle = "black"
-        ctx.strokeRect(this.x+1,this.y+1,this.w-2,this.h-2)
+        ctx.strokeRect(1,1,this.w-2,this.h-2)
         ctx.restore()
     }
+    draw_window_bar()
+    {
+        ctx.save()
+        ctx.translate(this.x,this.y)
+        var border = new Path2D()
+        border.rect(0, 0, this.w, this.bar_width);
+        ctx.clip(border);
+        ctx.fillStyle = "lightgray"
+        ctx.fillRect(0,0,this.w,this.h)
+
+        ctx.fillStyle = "black"
+
+        ctx.font = String(this.bar_width/1.5)+"px sans-serif"
+
+        ctx.fillText(this.window_title,10,this.bar_width/1.25)
+
+        ctx.lineWidth = 2
+        ctx.strokeStyle = "black"
+        ctx.strokeRect(1,1,this.w-2,this.bar_width)
+        ctx.restore()
+    }
+    /*
     draw_hud_post()
     {
         if(this.doFPS)
@@ -290,7 +324,7 @@ class GameBoard{
         ctx.strokeStyle = "black"
         ctx.strokeRect(this.x+1,this.y+1,this.w-2,this.h-2+this.hud_height)
         ctx.restore()
-    }
+    }*/
     key_press(event)
     {
         if(!this.keys.has(event.key))
@@ -308,6 +342,28 @@ class GameBoard{
         clearInterval(this.frames)
         this.frames = setInterval(this.draw,1000/frameRate)
         this.targetFrame = frameRate
+    }
+    mouse_works(event)
+    {
+        const rect = canvas.getBoundingClientRect()
+        if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width)
+        {
+            this.beingGrabbed = [event.x - rect.left - this.x, event.y - rect.top - this.y]
+            //print(this.beingGrabbed)
+        }
+    }
+    mouse_moves(event)
+    {
+        if(this.beingGrabbed == false)
+            return
+        const rect = canvas.getBoundingClientRect()
+        this.x += event.x - rect.left - this.x - this.beingGrabbed[0]
+        this.y += event.y - rect.top - this.y - this.beingGrabbed[1]
+    }
+    mouse_unworks(event)
+    {
+        if(this.beingGrabbed != false)
+            this.beingGrabbed = false
     }
     static time_to_time(current_time) {
         var seconds = floor(current_time / 1000)
@@ -340,7 +396,7 @@ class SnakeBoard extends GameBoard
 {
     constructor(x,y,w,h)
     {
-        super(x,y,w,h)
+        super(x,y,w,h,"Snake")
         this.current_snake = null
         this.appleAmount = 1
         this.apple_list = []
@@ -362,9 +418,9 @@ class SnakeBoard extends GameBoard
             for(var j = 0; j < 22; j++)
             {
                 ctx.strokeStyle = "rgba(255,0,0,0.25)"
-                ctx.strokeRect(2+this.x+size*i,2+this.y+size*j,size,size)
+                ctx.strokeRect(2+size*i,2+size*j,size,size)
                 ctx.strokeStyle = "rgba(128, 0, 0, 0.125)"
-                ctx.strokeRect(-18+this.x+size*i,-18+this.y+size*j,size,size)
+                ctx.strokeRect(-18+size*i,-18+size*j,size,size)
             }
         }
         if(this.appleAmount > this.apple_list.length)
@@ -412,7 +468,9 @@ class SnakeBoard extends GameBoard
         }
         super.draw_post()
 
-        super.draw_hud_pre()
+        super.draw_window_bar()
+
+        /*super.draw_hud_pre()
 
         ctx.fillStyle = "black"
 
@@ -437,7 +495,7 @@ class SnakeBoard extends GameBoard
 
         ctx.fillText(text_to_show,this.x+this.w-(ctx.measureText(text_to_show).width)-5,this.y+this.h+30)
 
-        super.draw_hud_post()
+        super.draw_hud_post()*/
 
         this.x = basic_pos[0]
         this.y = basic_pos[1]
@@ -489,7 +547,7 @@ class SnakeBoard extends GameBoard
     }
 }
 
-let FPS_Show = false
+let FPS_Show = true
 let fps_counter = document.getElementById("FPS")
 last_frame = performance.now()
 
@@ -515,7 +573,7 @@ function clearCanvas()
     }
 }
 
-sname = new SnakeBoard(0,0,400+4,400+4)
+sname = new SnakeBoard(200,0,400+4,400+4)
 /*snaker = new SnakeBoard(400,0,400,400)
 snakert = new SnakeBoard(0,400,400,400)
 snakerber = new SnakeBoard(400,400,400,400)*/
