@@ -234,7 +234,7 @@ class GameBoard{
         this.draw_window_bar = this.draw_window_bar.bind(this);
         //this.draw_hud_pre = this.draw_pre.bind(this);
         //this.draw_hud_post = this.draw_post.bind(this);
-        this.frames = setInterval(this.draw,1000/60)
+        //this.frames = setInterval(this.draw,1000/60)
         this.targetFrame = 60
         this.running = true
         this.keys = new Map()
@@ -242,6 +242,7 @@ class GameBoard{
         this.fps = 0
         this.doFPS = true
         this.beingGrabbed = false
+        this.active = true
         
         this.key_press = this.key_press.bind(this);
         self.addEventListener("keydown", this.key_press, false);
@@ -254,6 +255,8 @@ class GameBoard{
         self.addEventListener("mousemove", this.mouse_moves, false);
         this.mouse_unworks = this.mouse_unworks.bind(this);
         self.addEventListener("mouseup", this.mouse_unworks, false);
+
+        programList[title] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
     }
     draw_pre()
     {
@@ -283,6 +286,8 @@ class GameBoard{
     }*/
     draw()
     {
+        if(!active)
+            return
         this.draw_pre()
         this.draw_post()
         this.draw_window_bar()
@@ -291,6 +296,12 @@ class GameBoard{
     }
     draw_post()
     {
+        if(this.doFPS)
+        {
+            ctx.font = "30px sans-serif"
+            ctx.fillStyle = "rgba(255,0,0,0.4)"
+            ctx.fillText("FPS:"+String(floor(this.fps*10)/10),2,30)
+        }
         ctx.lineWidth = 4
         ctx.strokeStyle = "black"
         ctx.strokeRect(1,1,this.w-2,this.h-2)
@@ -318,6 +329,20 @@ class GameBoard{
             
             ctx.fillText(this.window_title,5 + this.icon.width,this.bar_width/1.25)
         }
+
+        ctx.fillStyle = "red"
+        ctx.fillRect(this.w-30,this.bar_width/5,25, this.bar_width/1.5)
+        ctx.fillStyle = "black"
+        ctx.fillText("X",this.w-24,this.bar_width/1.25)
+        ctx.strokeStyle = "black"
+        ctx.strokeRect(this.w-30,this.bar_width/5,25, this.bar_width/1.5)
+
+        ctx.fillStyle = "gray"
+        ctx.fillRect(this.w-60,this.bar_width/5,25, this.bar_width/1.5)
+        ctx.fillStyle = "black"
+        ctx.fillText("-",this.w-24*2-3,this.bar_width/1.5)
+        ctx.strokeStyle = "black"
+        ctx.strokeRect(this.w-60,this.bar_width/5,25, this.bar_width/1.5)
 
         ctx.lineWidth = 2
         ctx.strokeStyle = "black"
@@ -358,11 +383,20 @@ class GameBoard{
     }
     mouse_works(event)
     {
+        if(!this.active)
+            return
         const rect = canvas.getBoundingClientRect()
         if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width)
         {
+            if(event.x - rect.left >= this.x + this.w - 60 && event.x - rect.left <= this.x + this.w - 60+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
+            {
+                this.active = false
+                //can_clear = true
+                //clearCanvas()
+                return
+            }
             this.beingGrabbed = [event.x - rect.left - this.x, event.y - rect.top - this.y]
-            //print(this.beingGrabbed)
+            print(this.beingGrabbed)
         }
     }
     mouse_moves(event)
@@ -420,6 +454,8 @@ class SnakeBoard extends GameBoard
     }
     draw()
     {
+        if(!this.active)
+            return
         //ctx.clearRect(this.x-1,this.y-1,this.w+2,this.h+2)
         var basic_pos = [this.x,this.y]
         //this.x = (Math.sin(frameCount/10)*10) + basic_pos[0]
@@ -580,6 +616,28 @@ class SnakeBoard extends GameBoard
         }
     }
 }
+
+let programList = {}
+
+let TaskBar = {
+    manage_programs ()
+    {
+        for(var i in programList)
+        {
+            print(programList[i])
+            if(programList[i][2] >= programList[i][1]/20)
+            {
+                programList[i][2] = 0
+                programList[i][0].draw()
+            }
+            else
+                programList[i][2]++
+        }
+    },
+    
+}
+
+setInterval(TaskBar.manage_programs, 1)
 
 let FPS_Show = false
 let fps_counter = document.getElementById("FPS")
