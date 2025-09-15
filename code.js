@@ -174,19 +174,19 @@ class Snake
         if(!this.board.running && !this.lost)
             return
         this.moving = true
-        if(event.key == "ArrowDown" && this.next_dir != 270)
+        if(event.key == "ArrowDown" && this.next_dir != 270 && this.next_dir != 90)
         {
             this.next_dir = 270
         }
-        else if(event.key == "ArrowLeft" && this.next_dir != 180)
+        else if(event.key == "ArrowLeft" && this.next_dir != 180 && this.next_dir != 0)
         {
             this.next_dir = 180
         }
-        else if(event.key == "ArrowRight" && this.next_dir != 0)
+        else if(event.key == "ArrowRight" && this.next_dir != 0 && this.next_dir != 180)
         {
             this.next_dir = 0
         }
-        else if(event.key == "ArrowUp" && this.next_dir != 90)
+        else if(event.key == "ArrowUp" && this.next_dir != 90 && this.next_dir != 270)
         {
             this.next_dir = 90
         }
@@ -240,7 +240,7 @@ class GameBoard{
         this.keys = new Map()
         this.startFrame = performance.now()
         this.fps = 0
-        this.doFPS = true
+        this.doFPS = false
         this.beingGrabbed = false
         this.active = true
         
@@ -258,10 +258,10 @@ class GameBoard{
 
         programList[title] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
     }
-    draw_pre()
+    draw_pre(do_work)
     {
-        clearCanvas()
-        if(this.doFPS)
+        //clearCanvas()
+        if(this.doFPS && do_work)
         {
             var current_time = performance.now()
             this.fps = (1000 / (current_time - this.startFrame))
@@ -284,17 +284,17 @@ class GameBoard{
         ctx.fillStyle = this.bg_color
         ctx.fillRect(this.x,this.y+this.h,this.w,this.hud_height)
     }*/
-    draw()
+    draw(do_work)
     {
         if(!active)
             return
-        this.draw_pre()
-        this.draw_post()
-        this.draw_window_bar()
+        this.draw_pre(do_work)
+        this.draw_post(do_work)
+        this.draw_window_bar(do_work)
         //this.draw_hud_pre()
         //this.draw_hud_post()
     }
-    draw_post()
+    draw_post(do_work)
     {
         if(this.doFPS)
         {
@@ -307,7 +307,7 @@ class GameBoard{
         ctx.strokeRect(1,1,this.w-2,this.h-2)
         ctx.restore()
     }
-    draw_window_bar()
+    draw_window_bar(do_work)
     {
         ctx.save()
         ctx.translate(this.x,this.y)
@@ -452,7 +452,7 @@ class SnakeBoard extends GameBoard
         this.subtract_time = 0
         this.wait_time = 0
     }
-    draw()
+    draw(do_work)
     {
         if(!this.active)
             return
@@ -460,7 +460,7 @@ class SnakeBoard extends GameBoard
         var basic_pos = [this.x,this.y]
         //this.x = (Math.sin(frameCount/10)*10) + basic_pos[0]
         //this.y = (Math.cos(frameCount/10)*10) + basic_pos[1]
-        super.draw_pre()
+        super.draw_pre(do_work)
         const size = 40
         for(var i = 0; i < 22; i++)
         {
@@ -472,35 +472,36 @@ class SnakeBoard extends GameBoard
                 ctx.strokeRect(-18+size*i,-18+size*j,size,size)
             }
         }
-        if(this.appleAmount > this.apple_list.length)
-        {
-            while (true)
+        if(do_work)
+            if(this.appleAmount > this.apple_list.length)
             {
-                var x_pos = randInt(20,Math.floor(this.w/20)*20-20,20)
-                var y_pos = randInt(20,Math.floor(this.h/20)*20-20,20)
-                var good_to_go = true
-                if(this.current_snake == null)
-                    break
-                for(var i in this.current_snake.tail_array)
+                while (true)
                 {
-                    if(x_pos/20 == this.current_snake.tail_array[i][0] && y_pos/20 == this.current_snake.tail_array[i][1])
-                    {
-                        good_to_go = false
+                    var x_pos = randInt(20,Math.floor(this.w/20)*20-20,20)
+                    var y_pos = randInt(20,Math.floor(this.h/20)*20-20,20)
+                    var good_to_go = true
+                    if(this.current_snake == null)
                         break
+                    for(var i in this.current_snake.tail_array)
+                    {
+                        if(x_pos/20 == this.current_snake.tail_array[i][0] && y_pos/20 == this.current_snake.tail_array[i][1])
+                        {
+                            good_to_go = false
+                            break
+                        }
                     }
+                    if(good_to_go)
+                        break
                 }
-                if(good_to_go)
-                    break
+                new Apple(x_pos,y_pos,this)
             }
-            new Apple(x_pos,y_pos,this)
-        }
         if(this.current_snake == null)
         {
             this.current_snake = new Snake(this)
         }
         else
         {
-            if(frameCount % 1 == 0 && this.running)
+            if(frameCount % 1 == 0 && this.running && do_work)
             {
                 if((this.current_snake.x % 20) == 2 && (this.current_snake.y % 20) == 2 && this.current_snake.moving)
                 {
@@ -515,7 +516,7 @@ class SnakeBoard extends GameBoard
         {
             this.apple_list[i].draw()
         }
-        super.draw_post()
+        super.draw_post(do_work)
 
         if(this.current_snake != null)
         {
@@ -598,7 +599,7 @@ class SnakeBoard extends GameBoard
                         else
                         {
                             this.subtract_time += performance.now() - this.wait_time
-                            print(this.subtract_time)
+                            //print(this.subtract_time)
                             this.wait_time = 0
                         }
                     }
@@ -622,22 +623,28 @@ let programList = {}
 let TaskBar = {
     manage_programs ()
     {
+        clearCanvas()
         for(var i in programList)
         {
-            print(programList[i])
-            if(programList[i][2] >= programList[i][1]/20)
+            //print(programList[i])
+            if(programList[i][2] >= programList[i][1]/60)
             {
                 programList[i][2] = 0
-                programList[i][0].draw()
+                programList[i][0].draw(true)
             }
             else
+            {
                 programList[i][2]++
+                programList[i][0].draw(false)
+            }
         }
+        requestAnimationFrame(TaskBar.manage_programs)
     },
     
 }
 
-setInterval(TaskBar.manage_programs, 1)
+//setInterval(TaskBar.manage_programs, 1)
+requestAnimationFrame(TaskBar.manage_programs)
 
 let FPS_Show = false
 let fps_counter = document.getElementById("FPS")
@@ -658,8 +665,8 @@ let can_clear = true
 
 function clearCanvas()
 {
-    if (can_clear)
-    {
+    /*if (can_clear)
+    {*/
         //ctx.fillRect
         ctx.save()
         ctx.fillStyle = "blue"
@@ -667,7 +674,7 @@ function clearCanvas()
         ctx.fillRect(0,0,canvas.width,canvas.height)
         ctx.restore()
         can_clear = false
-    }
+  //  }
 }
 
 sname = new SnakeBoard(200,0,400+4,400+4)
@@ -675,14 +682,14 @@ sname = new SnakeBoard(200,0,400+4,400+4)
 snakert = new SnakeBoard(0,400,400,400)
 snakerber = new SnakeBoard(400,400,400,400)*/
 
-frame()
+//frame()
 
-setInterval(frame,1000/60)
-
+//setInterval(frame,1000/60)
+/*
 function allowForThing()
 {
     can_clear = true
     requestAnimationFrame(allowForThing)
 }
 
-requestAnimationFrame(allowForThing)
+requestAnimationFrame(allowForThing)*/
