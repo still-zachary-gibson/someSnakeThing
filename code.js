@@ -213,7 +213,7 @@ class Apple
 }
 
 class GameBoard{
-    constructor(x,y,w,h, title)
+    constructor(x,y,w,h,title,icon=false)
     {
         this.x = x
         this.y = y
@@ -221,6 +221,12 @@ class GameBoard{
         this.h = h
         this.bar_width = 30
         this.window_title = title
+        this.icon = false
+        if(icon != false)
+        {
+            this.icon = new Image()
+            this.icon.src = icon
+        }
         this.bg_color = "white"
         this.draw = this.draw.bind(this);
         this.draw_pre = this.draw_pre.bind(this);
@@ -304,7 +310,14 @@ class GameBoard{
 
         ctx.font = String(this.bar_width/1.5)+"px sans-serif"
 
-        ctx.fillText(this.window_title,10,this.bar_width/1.25)
+        if(this.icon == false)
+            ctx.fillText(this.window_title,10,this.bar_width/1.25)
+        else
+        {
+            ctx.drawImage(this.icon, 1, 1)
+            
+            ctx.fillText(this.window_title,5 + this.icon.width,this.bar_width/1.25)
+        }
 
         ctx.lineWidth = 2
         ctx.strokeStyle = "black"
@@ -396,7 +409,7 @@ class SnakeBoard extends GameBoard
 {
     constructor(x,y,w,h)
     {
-        super(x,y,w,h,"Snake")
+        super(x,y,w,h,"Snake", "Images/snakeIcon.png")
         this.current_snake = null
         this.appleAmount = 1
         this.apple_list = []
@@ -468,6 +481,25 @@ class SnakeBoard extends GameBoard
         }
         super.draw_post()
 
+        if(this.current_snake != null)
+        {
+            if(this.current_snake.moving && !this.current_snake.lost && this.running)
+            {
+                if(this.time_started == 0)
+                    this.time_started = performance.now()
+                this.time_shown = GameBoard.time_to_time(performance.now() - this.time_started - this.subtract_time)
+                //if(performance.now() - this.time_started - this.subtract_time < 0)
+                  //  this.time_shown = ""
+            }
+        }
+
+        this.window_title = "Snake | " + this.time_shown + " | Apples: " + String(this.current_snake.tail_array.length-4)
+
+        /*if(!this.running)
+            this.window_title += " | PAUSED"
+        else if (this.current_snake.lost)
+            this.window_title += " | LOST"*/
+
         super.draw_window_bar()
 
         /*super.draw_hud_pre()
@@ -508,6 +540,8 @@ class SnakeBoard extends GameBoard
             {
                 if(this.current_snake != null)
                 {
+                    if(!this.current_snake.lost && !this.current_snake.moving)
+                        return
                     if(this.current_snake.lost)
                     {
                         this.time_shown = "0:00"
@@ -547,7 +581,7 @@ class SnakeBoard extends GameBoard
     }
 }
 
-let FPS_Show = true
+let FPS_Show = false
 let fps_counter = document.getElementById("FPS")
 last_frame = performance.now()
 
@@ -568,7 +602,12 @@ function clearCanvas()
 {
     if (can_clear)
     {
-        ctx.clearRect(0,0,canvas.width,canvas.height)
+        //ctx.fillRect
+        ctx.save()
+        ctx.fillStyle = "blue"
+        ctx.setTransform(1,0,0,1,0,0)
+        ctx.fillRect(0,0,canvas.width,canvas.height)
+        ctx.restore()
         can_clear = false
     }
 }
