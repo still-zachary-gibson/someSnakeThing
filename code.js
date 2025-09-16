@@ -1,8 +1,8 @@
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
 const scale = 640/4
-canvas.width = 4 + 20*4*10
-canvas.height = 4 + 20*3*10;
+canvas.width = 1280//4 + 20*4*10
+canvas.height = 720//4 + 20*3*10;
 const ctx = canvas.getContext("2d");
 
 const print = (n) => console.log(n)
@@ -232,9 +232,6 @@ class GameBoard{
         this.draw_pre = this.draw_pre.bind(this);
         this.draw_post = this.draw_post.bind(this);
         this.draw_window_bar = this.draw_window_bar.bind(this);
-        //this.draw_hud_pre = this.draw_pre.bind(this);
-        //this.draw_hud_post = this.draw_post.bind(this);
-        //this.frames = setInterval(this.draw,1000/60)
         this.targetFrame = 60
         this.running = true
         this.keys = new Map()
@@ -256,11 +253,30 @@ class GameBoard{
         this.mouse_unworks = this.mouse_unworks.bind(this);
         self.addEventListener("mouseup", this.mouse_unworks, false);
 
-        programList[title] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
+        var what_put_in = String(title)+"_1"
+
+        while(what_put_in in programList)
+        //for(var j = 0; j < 11; j++)
+        {
+            var okay_fine = what_put_in.split("_")
+            var name_ = Number(okay_fine[okay_fine.length-1])+1
+            what_put_in = ""
+            for(var i = 0; i < okay_fine.length-1; i++)
+            {
+                what_put_in += okay_fine[i] + "_"
+            }
+            what_put_in += String(name_)
+            //what_put_in = what_put_in.substring(0,what_put_in.length-1)
+        }
+
+        //print(what_put_in)
+
+        programList[what_put_in] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
+
+        this.my_name = what_put_in
     }
     draw_pre(do_work)
     {
-        //clearCanvas()
         if(this.doFPS && do_work)
         {
             var current_time = performance.now()
@@ -275,19 +291,11 @@ class GameBoard{
         ctx.fillStyle = this.bg_color
         ctx.fillRect(0,0,this.w,this.h)
     } 
-    /*draw_hud_pre()
-    {
-        ctx.save()
-        var border = new Path2D()
-        border.rect(0, this.y, this.w, this.h+this.hud_height);
-        ctx.clip(border);
-        ctx.fillStyle = this.bg_color
-        ctx.fillRect(this.x,this.y+this.h,this.w,this.hud_height)
-    }*/
     draw(do_work)
     {
-        if(!active)
-            return
+        //if(!active)
+        //    return
+        
         this.draw_pre(do_work)
         this.draw_post(do_work)
         this.draw_window_bar(do_work)
@@ -349,22 +357,10 @@ class GameBoard{
         ctx.strokeRect(1,1,this.w-2,this.bar_width)
         ctx.restore()
     }
-    /*
-    draw_hud_post()
-    {
-        if(this.doFPS)
-        {
-            ctx.font = "30px sans-serif"
-            ctx.fillStyle = "rgba(255,0,0,0.4)"
-            ctx.fillText("FPS:"+String(floor(this.fps*10)/10),this.x+2,this.y+30)
-        }
-        ctx.lineWidth = 4
-        ctx.strokeStyle = "black"
-        ctx.strokeRect(this.x+1,this.y+1,this.w-2,this.h-2+this.hud_height)
-        ctx.restore()
-    }*/
     key_press(event)
     {
+        if(!this.active)
+            return -1
         if(!this.keys.has(event.key))
             this.keys.set(event.key, 1)
         else
@@ -377,26 +373,68 @@ class GameBoard{
     }
     change_fps(frameRate)
     {
-        clearInterval(this.frames)
-        this.frames = setInterval(this.draw,1000/frameRate)
+        //clearInterval(this.frames)
+        //this.frames = setInterval(this.draw,1000/frameRate)
         this.targetFrame = frameRate
+        programList[this.my_name][1] = this.targetFrame
     }
     mouse_works(event)
     {
         if(!this.active)
             return
         const rect = canvas.getBoundingClientRect()
-        if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width)
+        if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width + this.w)
         {
-            if(event.x - rect.left >= this.x + this.w - 60 && event.x - rect.left <= this.x + this.w - 60+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
+            print("ME: " + String(this.my_name))
+            var reached = false
+            print(typeof(programList))
+            for(var i in programList.reverse())
             {
-                this.active = false
-                //can_clear = true
-                //clearCanvas()
-                return
+                print(programList[i][0].my_name)
+                if(!reached)
+                    if(programList[i][0].my_name == this.my_name)
+                    {
+                        print("TEST")
+                        reached = true
+                        continue
+                    }
+                else
+                {
+                    print(this.my_name)
+                    if(event.x - rect.left >= programList[i][0].x && event.y - rect.top >= programList[i][0].y &&
+                    event.x - rect.left <= programList[i][0].x + programList[i][0].w && event.y - rect.top <= programList[i][0].y + programList[i][0].bar_width + programList[i][0].w)
+                    {
+                        print("AAA")
+                        return
+                    }
+                }
             }
-            this.beingGrabbed = [event.x - rect.left - this.x, event.y - rect.top - this.y]
-            print(this.beingGrabbed)
+            //delete programList[this.my_name]
+            //programList[this.my_name] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
+            //print(programList)
+            if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width)
+            {
+                if(event.x - rect.left >= this.x + this.w - 60 && event.x - rect.left <= this.x + this.w - 60+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
+                {
+                    this.active = false
+                    this.beingGrabbed = false
+                    return
+                }
+                if(event.x - rect.left >= this.x + this.w - 30 && event.x - rect.left <= this.x + this.w - 30+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
+                {
+                    this.active = false
+                    delete programList[this.my_name]
+                    this.beingGrabbed = false
+                    /*Object.keys(this).forEach(v => {print(String(v) + ": " + String(this[v]))})
+                    Object.keys(this).forEach(v => {this[v] = null})
+                    this.keys = new Map()
+                    print("_____")
+                    Object.keys(this).forEach(v => {print(String(v) + ": " + String(this[v]))})*/
+                    return
+                }
+                this.beingGrabbed = [event.x - rect.left - this.x, event.y - rect.top - this.y]
+                //print(this.beingGrabbed)
+            }
         }
     }
     mouse_moves(event)
@@ -456,10 +494,7 @@ class SnakeBoard extends GameBoard
     {
         if(!this.active)
             return
-        //ctx.clearRect(this.x-1,this.y-1,this.w+2,this.h+2)
         var basic_pos = [this.x,this.y]
-        //this.x = (Math.sin(frameCount/10)*10) + basic_pos[0]
-        //this.y = (Math.cos(frameCount/10)*10) + basic_pos[1]
         super.draw_pre(do_work)
         const size = 40
         for(var i = 0; i < 22; i++)
@@ -525,46 +560,13 @@ class SnakeBoard extends GameBoard
                 if(this.time_started == 0)
                     this.time_started = performance.now()
                 this.time_shown = GameBoard.time_to_time(performance.now() - this.time_started - this.subtract_time)
-                //if(performance.now() - this.time_started - this.subtract_time < 0)
-                  //  this.time_shown = ""
+
             }
         }
 
         this.window_title = "Snake | " + this.time_shown + " | Apples: " + String(this.current_snake.tail_array.length-4)
 
-        /*if(!this.running)
-            this.window_title += " | PAUSED"
-        else if (this.current_snake.lost)
-            this.window_title += " | LOST"*/
-
         super.draw_window_bar()
-
-        /*super.draw_hud_pre()
-
-        ctx.fillStyle = "black"
-
-        if(this.current_snake != null)
-        {
-            if(this.current_snake.moving && !this.current_snake.lost && this.running)
-            {
-                if(this.time_started == 0)
-                    this.time_started = performance.now()
-                this.time_shown = GameBoard.time_to_time(performance.now() - this.time_started - this.subtract_time)
-            }
-        }
-        ctx.font = "30px sans-serif"
-        ctx.fillText(this.time_shown,this.x+10,this.y+this.h+30)
-        //print
-        if(this.current_snake != null && this.current_snake.lost)
-        {
-            ctx.fillText("You lost!", this.x+(ctx.measureText(this.time_shown).width)+30, this.y+this.h+30)
-        }
-
-        var text_to_show = "Apples: " + String(this.current_snake.tail_array.length-4)
-
-        ctx.fillText(text_to_show,this.x+this.w-(ctx.measureText(text_to_show).width)-5,this.y+this.h+30)
-
-        super.draw_hud_post()*/
 
         this.x = basic_pos[0]
         this.y = basic_pos[1]
@@ -614,6 +616,12 @@ class SnakeBoard extends GameBoard
             {
                 super.change_fps(this.targetFrame*2)
             }
+            else if (event.key == "t")
+            {
+                new SnakeBoard(this.x + 20, this.y + 20, this.w, this.h)
+
+                print(programList)
+            }
         }
     }
 }
@@ -627,17 +635,21 @@ let TaskBar = {
         for(var i in programList)
         {
             //print(programList[i])
-            if(programList[i][2] >= programList[i][1]/60)
+            if(!programList[i][0].active)
+                continue
+            if(programList[i][2] >= 100)
             {
-                programList[i][2] = 0
+                if(programList[i][1] < 100)
+                    programList[i][2] = 0
                 programList[i][0].draw(true)
             }
             else
             {
-                programList[i][2]++
+                programList[i][2] += programList[i][1]//++
                 programList[i][0].draw(false)
             }
         }
+
         requestAnimationFrame(TaskBar.manage_programs)
     },
     
@@ -677,14 +689,14 @@ function clearCanvas()
   //  }
 }
 
-sname = new SnakeBoard(200,0,400+4,400+4)
+/*sname = */new SnakeBoard(200,0,400+4,400+4)
 /*snaker = new SnakeBoard(400,0,400,400)
 snakert = new SnakeBoard(0,400,400,400)
 snakerber = new SnakeBoard(400,400,400,400)*/
 
-//frame()
+frame()
 
-//setInterval(frame,1000/60)
+setInterval(frame,1000/60)
 /*
 function allowForThing()
 {
