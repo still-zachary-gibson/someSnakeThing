@@ -255,36 +255,23 @@ class GameBoard{
 
         var what_put_in = String(title)+"_1"
 
-        var not_true = false
-        while(!not_true)
+        while(what_put_in in programList)
         //for(var j = 0; j < 11; j++)
         {
-            not_true = true
-            for(var i in programList)
+            var okay_fine = what_put_in.split("_")
+            var name_ = Number(okay_fine[okay_fine.length-1])+1
+            what_put_in = ""
+            for(var i = 0; i < okay_fine.length-1; i++)
             {
-                if(what_put_in == programList[i][3])
-                {
-                    not_true = false
-                    break
-                }
+                what_put_in += okay_fine[i] + "_"
             }
-            if(!not_true)
-            {
-                var okay_fine = what_put_in.split("_")
-                var name_ = Number(okay_fine[okay_fine.length-1])+1
-                what_put_in = ""
-                for(var i = 0; i < okay_fine.length-1; i++)
-                {
-                    what_put_in += okay_fine[i] + "_"
-                }
-                what_put_in += String(name_)
-            }
+            what_put_in += String(name_)
             //what_put_in = what_put_in.substring(0,what_put_in.length-1)
         }
 
         //print(what_put_in)
 
-        programList.push([this, JSON.parse(JSON.stringify(this.targetFrame)), 0, what_put_in])
+        programList[what_put_in] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
 
         this.my_name = what_put_in
     }
@@ -398,31 +385,24 @@ class GameBoard{
         const rect = canvas.getBoundingClientRect()
         if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width + this.w)
         {
-            //print("ME: " + String(this.my_name))
-            var reached = -1
-            //print(typeof(programList))
+            var reached = false
             for(var i in programList)
             {
-                if(reached == -1)
+                if(!reached)
                 {
                     if(programList[i][0].my_name == this.my_name)
-                    {
-                        reached = i
-                        continue
-                    }
+                        reached = true
                 }
                 else
                 {
                     if(event.x - rect.left >= programList[i][0].x && event.y - rect.top >= programList[i][0].y &&
                     event.x - rect.left <= programList[i][0].x + programList[i][0].w && event.y - rect.top <= programList[i][0].y + programList[i][0].bar_width + programList[i][0].w)
-                    {
                         return
-                    }
                 }
             }
-            programList.splice(reached,1)
-            programList.push([this, JSON.parse(JSON.stringify(this.targetFrame)), 0, this.my_name])
-            //print(programList)
+            delete programList[this.my_name]
+            programList[this.my_name] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
+            print(programList)
             if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width)
             {
                 if(event.x - rect.left >= this.x + this.w - 60 && event.x - rect.left <= this.x + this.w - 60+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
@@ -434,7 +414,7 @@ class GameBoard{
                 if(event.x - rect.left >= this.x + this.w - 30 && event.x - rect.left <= this.x + this.w - 30+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
                 {
                     this.active = false
-                    programList.splice(reached,1)
+                    delete programList[this.my_name]
                     this.beingGrabbed = false
                     /*Object.keys(this).forEach(v => {print(String(v) + ": " + String(this[v]))})
                     Object.keys(this).forEach(v => {this[v] = null})
@@ -631,13 +611,13 @@ class SnakeBoard extends GameBoard
             {
                 new SnakeBoard(this.x + 20, this.y + 20, this.w, this.h)
 
-               print(programList)
+                print(programList)
             }
         }
     }
 }
 
-let programList = []
+let programList = {}
 
 let TaskBar = {
     manage_programs ()
