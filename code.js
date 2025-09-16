@@ -173,7 +173,8 @@ class Snake
     {
         if(!this.board.running && !this.lost)
             return
-        this.moving = true
+        if(event.key == "ArrowDown" || event.key == "ArrowUp" || event.key == "ArrowLeft" || event.key == "ArrowRight")
+            this.moving = true
         if(event.key == "ArrowDown" && this.next_dir != 270 && this.next_dir != 90)
         {
             this.next_dir = 270
@@ -255,9 +256,11 @@ class GameBoard{
 
         var what_put_in = String(title)+"_1"
 
+        var any_before = true
+
         while(what_put_in in programList)
-        //for(var j = 0; j < 11; j++)
         {
+            any_before = false
             var okay_fine = what_put_in.split("_")
             var name_ = Number(okay_fine[okay_fine.length-1])+1
             what_put_in = ""
@@ -266,7 +269,11 @@ class GameBoard{
                 what_put_in += okay_fine[i] + "_"
             }
             what_put_in += String(name_)
-            //what_put_in = what_put_in.substring(0,what_put_in.length-1)
+        }
+
+        if(any_before)
+        {
+           create_program_icon(icon)
         }
 
         //print(what_put_in)
@@ -402,7 +409,6 @@ class GameBoard{
             }
             delete programList[this.my_name]
             programList[this.my_name] = [this, JSON.parse(JSON.stringify(this.targetFrame)), 0]
-            print(programList)
             if(event.x - rect.left >= this.x && event.y - rect.top >= this.y && event.x - rect.left <= this.x + this.w && event.y - rect.top <= this.y + this.bar_width)
             {
                 if(event.x - rect.left >= this.x + this.w - 60 && event.x - rect.left <= this.x + this.w - 60+25 && event.y - rect.top >= this.y + this.bar_width/5 && event.y - rect.top <= this.y + this.bar_width/1.5)
@@ -416,15 +422,9 @@ class GameBoard{
                     this.active = false
                     delete programList[this.my_name]
                     this.beingGrabbed = false
-                    /*Object.keys(this).forEach(v => {print(String(v) + ": " + String(this[v]))})
-                    Object.keys(this).forEach(v => {this[v] = null})
-                    this.keys = new Map()
-                    print("_____")
-                    Object.keys(this).forEach(v => {print(String(v) + ": " + String(this[v]))})*/
                     return
                 }
                 this.beingGrabbed = [event.x - rect.left - this.x, event.y - rect.top - this.y]
-                //print(this.beingGrabbed)
             }
         }
     }
@@ -592,7 +592,6 @@ class SnakeBoard extends GameBoard
                         else
                         {
                             this.subtract_time += performance.now() - this.wait_time
-                            //print(this.subtract_time)
                             this.wait_time = 0
                         }
                     }
@@ -640,11 +639,26 @@ let TaskBar = {
                 programList[i][0].draw(false)
             }
         }
-
+        ctx.fillStyle = "rgba(0,0,0,0.7)"
+        ctx.fillRect(0,canvas.height-40,canvas.width,40)
+        var x_pos = 5
+        for(var i in program_icons)
+        {
+            print(i)
+            //draw_image(this.program_icons[i], x_pos, canvas.height-35)
+            x_pos += 35
+        }
         requestAnimationFrame(TaskBar.manage_programs)
     },
     
 }
+let program_icons = []
+
+let create_program_icon = function(icon)
+    {
+        print("AAAAA")
+        program_icons.push(icon)
+    }
 
 //setInterval(TaskBar.manage_programs, 1)
 requestAnimationFrame(TaskBar.manage_programs)
@@ -666,6 +680,9 @@ function frame()
 
 let can_clear = true
 
+let pcBackground = new Image()
+pcBackground.src = "Images/pcBackground.png"
+
 function clearCanvas()
 {
     /*if (can_clear)
@@ -674,25 +691,15 @@ function clearCanvas()
         ctx.save()
         ctx.fillStyle = "blue"
         ctx.setTransform(1,0,0,1,0,0)
-        ctx.fillRect(0,0,canvas.width,canvas.height)
+        ctx.drawImage(pcBackground,0,0)
+        //ctx.fillRect(0,0,canvas.width,canvas.height)
         ctx.restore()
         can_clear = false
   //  }
 }
 
 /*sname = */new SnakeBoard(200,0,400+4,400+4)
-/*snaker = new SnakeBoard(400,0,400,400)
-snakert = new SnakeBoard(0,400,400,400)
-snakerber = new SnakeBoard(400,400,400,400)*/
 
 frame()
 
 setInterval(frame,1000/60)
-/*
-function allowForThing()
-{
-    can_clear = true
-    requestAnimationFrame(allowForThing)
-}
-
-requestAnimationFrame(allowForThing)*/
