@@ -273,7 +273,18 @@ class GameBoard{
 
         if(any_before)
         {
-           TaskBar.create_program_icon(icon)
+           TaskBar.create_program_icon(this.icon)
+           TaskBar.program_icons[TaskBar.program_icons.length-1].responsibilites[what_put_in] = this
+        }
+        else
+        {
+            for(var i in TaskBar.program_icons)
+            {
+                if(String(TaskBar.program_icons[i].image) == String(this.icon))
+                {
+                    TaskBar.program_icons[i].responsibilites[what_put_in] = this
+                }
+            }
         }
 
         //print(what_put_in)
@@ -421,6 +432,13 @@ class GameBoard{
                 {
                     this.active = false
                     delete TaskBar.programList[this.my_name]
+                    for(var i in TaskBar.program_icons)
+                    {
+                        if(String(TaskBar.program_icons[i].image) == String(this.icon))
+                        {
+                            delete TaskBar.program_icons[i].responsibilites[this.my_name]
+                        }
+                    }
                     this.beingGrabbed = false
                     return
                 }
@@ -616,6 +634,42 @@ class SnakeBoard extends GameBoard
     }
 }
 
+class GameIcon{
+    constructor(image)
+    {
+        //var kill_this_image = new Image()
+        //kill_this_image.src = image
+        this.image = image
+        this.index = TaskBar.program_icons.length
+        this.mouse_moves = this.mouse_moves.bind(this);
+        self.addEventListener("mousemove", this.mouse_moves, false);
+        this.hovered_over = false
+        this.mouse_works = this.mouse_works.bind(this);
+        self.addEventListener("mousedown", this.mouse_works, false);
+        this.responsibilites = []
+        this.menu_open = false
+    }
+    mouse_moves(event)
+    {
+        const rect = canvas.getBoundingClientRect()
+        if(event.x - rect.x >= 5 + 35*this.index && event.y - rect.y >= canvas.height-35 && event.x - rect.x <= 40 + 35*this.index)
+        {
+            this.hovered_over = true
+        }
+        else if (!this.menu_open)
+        {
+            this.hovered_over = false
+        }
+    }
+    mouse_works(event)
+    {
+        if(this.hovered_over)
+        {
+            this.menu_open = !this.menu_open
+        }
+    }
+}
+
 //let programList = {}
 
 let TaskBar = {
@@ -643,31 +697,31 @@ let TaskBar = {
         }
         ctx.fillStyle = "rgba(0,0,0,0.7)"
         ctx.fillRect(0,canvas.height-40,canvas.width,40)
-        var x_pos = 5
-
-        //print(TaskBar.program_icons)
-        print(this.program_icons)
-        //print(TaskBar)
-        //this.program_icons.push("A")
-        /*for(var i in TaskBar.program_icons)
+        ctx.fillStyle = "rgba(0, 255, 255, 0.7)"
+        for(var i in this.program_icons)
         {
-            print(i)
-            ctx.drawImage(TaskBar.program_icons[i], x_pos, canvas.height-35)
-            x_pos += 35
-        }*/
-        //this.manage_programs()
+            if(this.program_icons[i].hovered_over)
+                ctx.fillRect(40*this.program_icons[i].index,canvas.height-40,40,40)
+            if(this.program_icons[i].menu_open)
+            {
+                ctx.fillStyle = "rgba(199, 199, 199, 1)"
+                ctx.fillRect(40*this.program_icons[i].index,canvas.height-40 - 20*this.program_icons[i].responsibilites.length,100,20*this.program_icons[i].responsibilites.length)
+                print(this.program_icons[i].responsibilites.length)
+                print(this.program_icons[i].responsibilites)
+                ctx.fillStyle = "rgba(0, 255, 255, 0.7)"
+            }
+            ctx.drawImage(this.program_icons[i].image, 5+35*this.program_icons[i].index, canvas.height-35)
+        }
         requestAnimationFrame(this.manage_programs.bind(this))
     },
     create_program_icon(icon)
     {
-        //print("AAAAA")
-        this.program_icons.push(icon)
+        var cool_thing = new GameIcon(icon)
+
+        this.program_icons.push(cool_thing)
         //print(this.program_icons)
     },
 }
-
-//setInterval(TaskBar.manage_programs, 1)
-//requestAnimationFrame(TaskBar.manage_programs)
 
 let FPS_Show = false
 let fps_counter = document.getElementById("FPS")
@@ -676,7 +730,6 @@ last_frame = performance.now()
 function frame()
 {
     frameCount++
-    //print(TaskBar)
     if(FPS_Show)
     {
         var current_time = performance.now()
@@ -689,10 +742,6 @@ let can_clear = true
 
 let pcBackground = new Image()
 pcBackground.src = "Images/pcBackground.png"
-
-//TaskBar.program_icons = [pcBackground]
-
-//TaskBar.create_program_icon(pcBackground)
 
 function clearCanvas()
 {
